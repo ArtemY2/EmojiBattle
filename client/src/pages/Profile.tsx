@@ -56,6 +56,7 @@ const Profile: React.FC = () => {
 
         try {
             await client.graphql({
+                authMode: 'AMAZON_COGNITO_USER_POOLS',
                 query: createProfile,
                 variables: {
                     input: {
@@ -70,6 +71,7 @@ const Profile: React.FC = () => {
             if (msg.includes('already exists') || msg.includes('Conflict')) {
                 try {
                     await client.graphql({
+                        authMode: 'AMAZON_COGNITO_USER_POOLS',
                         query: updateProfile,
                         variables: { input },
                     });
@@ -89,6 +91,7 @@ const Profile: React.FC = () => {
         const fetchOrInitProfile = async () => {
             try {
                 await client.graphql({
+                    authMode: 'AMAZON_COGNITO_USER_POOLS',
                     query: createProfile,
                     variables: {
                         input: {
