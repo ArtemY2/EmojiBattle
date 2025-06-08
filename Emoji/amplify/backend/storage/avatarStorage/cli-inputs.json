@@ -1,0 +1,13 @@
+{
+  "resourceName": "avatarStorage",
+  "policyUUID": "ede04a02",
+  "bucketName": "emojibattle-avatars",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}

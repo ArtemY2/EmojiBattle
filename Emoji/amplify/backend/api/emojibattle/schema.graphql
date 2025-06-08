@@ -1,0 +1,5 @@
+type Profile @model @auth(rules: [{ allow: owner }]) {
+  id: ID!
+  username: String
+  emoji: String
+}

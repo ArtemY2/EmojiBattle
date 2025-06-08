@@ -1,0 +1,11 @@
+{
+  "AppSyncApiName": "emojibattle",
+  "DynamoDBBillingMode": "PAY_PER_REQUEST",
+  "DynamoDBEnableServerSideEncryption": false,
+  "AuthCognitoUserPoolId": {
+    "Fn::GetAtt": [
+      "authemojibattle953f45c9",
+      "Outputs.UserPoolId"
+    ]
+  }
+}

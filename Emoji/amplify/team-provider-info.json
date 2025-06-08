@@ -1,0 +1,36 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-emojibattle-dev-2bdcc-authRole",
+      "UnauthRoleArn": "arn:aws:iam::468167886827:role/amplify-emojibattle-dev-2bdcc-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::468167886827:role/amplify-emojibattle-dev-2bdcc-authRole",
+      "Region": "ap-south-1",
+      "DeploymentBucketName": "amplify-emojibattle-dev-2bdcc-deployment",
+      "UnauthRoleName": "amplify-emojibattle-dev-2bdcc-unauthRole",
+      "StackName": "amplify-emojibattle-dev-2bdcc",
+      "StackId": "arn:aws:cloudformation:ap-south-1:468167886827:stack/amplify-emojibattle-dev-2bdcc/92adca10-4454-11f0-8a2e-0ab4a1952251",
+      "AmplifyAppId": "d1t79nmdvcqeg4"
+    },
+    "categories": {
+      "auth": {
+        "emojibattle953f45c9": {}
+      },
+      "function": {
+        "S3Triggerfcbe9933": {
+          "deploymentBucketName": "amplify-emojibattle-dev-2bdcc-deployment",
+          "s3Key": "amplify-builds/S3Triggerfcbe9933-77327778656e79694e69-build.zip"
+        },
+        "S3Trigger898f6709": {
+          "deploymentBucketName": "amplify-emojibattle-dev-2bdcc-deployment",
+          "s3Key": "amplify-builds/S3Trigger898f6709-692b634330652f303865-build.zip"
+        }
+      },
+      "api": {
+        "emojibattle": {}
+      },
+      "storage": {
+        "avatarStorage": {}
+      }
+    }
+  }
+}
