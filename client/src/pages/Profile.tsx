@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { uploadData } from 'aws-amplify/storage';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { generateClient } from 'aws-amplify/api';
-import { createProfile, updateProfile } from '../graphql/mutations';
 import { fetchAuthSession } from 'aws-amplify/auth';
+import { createProfile, updateProfile } from '../graphql/mutations';
+import { getProfile } from '../graphql/queries';
 
+// Правильная типизация для GraphQL клиента
 const client = generateClient();
 
 const Profile: React.FC = () => {
@@ -14,9 +16,10 @@ const Profile: React.FC = () => {
 
     const [selectedEmoji, setSelectedEmoji] = useState('😎');
     const [name, setName] = useState(user?.username || '');
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        fetchAuthSession().then(session => {
+        fetchAuthSession().then((session) => {
             const token = session.tokens?.idToken?.toString();
             console.log('Cognito JWT:', token);
         });
@@ -24,6 +27,7 @@ const Profile: React.FC = () => {
 
     const uploadEmoji = async (emoji: string) => {
         try {
+            setLoading(true);
             const blob = new Blob([emoji], { type: 'text/plain' });
             const filename = `avatars/${Date.now()}.txt`;
 
@@ -36,85 +40,115 @@ const Profile: React.FC = () => {
             }).result;
 
             setSelectedEmoji(emoji);
+            console.log('Emoji uploaded successfully:', emoji);
         } catch (error) {
             console.error('S3 Upload Error:', error);
             alert('❌ Ошибка при загрузке эмодзи в S3');
+        } finally {
+            setLoading(false);
         }
     };
 
     const saveProfile = async () => {
+        if (!user?.userId || !user?.username) {
+            alert('❌ Пользователь не авторизован');
+            return;
+        }
+
         const input = {
-            id: user?.userId,
+            id: user.userId,
             username: name,
             emoji: selectedEmoji,
+            owner: user.username,
         };
 
-        console.log('=== SAVE PROFILE DEBUG ===');
-        console.log('userId:', input.id);
-        console.log('name:', input.username);
-        console.log('emoji:', input.emoji);
+        console.log('=== SAVE PROFILE DEBUG ===', input);
+        setLoading(true);
 
         try {
+            // Сначала пытаемся создать профиль с указанием authMode
             await client.graphql({
                 query: createProfile,
-                variables: {
-                    input: {
-                        ...input,
-                        owner: user?.username,
-                    },
-                },
+                variables: { input },
+                authMode: 'userPool' as any,
             });
             alert('✅ Профиль создан!');
         } catch (error: any) {
-            const msg = error?.errors?.[0]?.message || '';
-            if (msg.includes('already exists') || msg.includes('Conflict')) {
+            console.error('Create profile error:', error);
+
+            // Если профиль уже существует, обновляем его
+            if (error.errors?.[0]?.errorType === 'ConditionalCheckFailedException' ||
+                error.errors?.[0]?.errorType === 'ConflictUnhandled') {
                 try {
                     await client.graphql({
                         query: updateProfile,
                         variables: { input },
+                        authMode: 'userPool' as any,
                     });
                     alert('✅ Профиль обновлён!');
                 } catch (updateError) {
-                    console.error('Update failed:', updateError);
-                    alert('❌ Ошибка при обновлении');
+                    console.error('Update profile error:', updateError);
+                    alert('❌ Ошибка при обновлении профиля');
                 }
             } else {
                 console.error('GraphQL Save Error:', JSON.stringify(error, null, 2));
                 alert('❌ Ошибка при сохранении профиля');
             }
+        } finally {
+            setLoading(false);
         }
     };
 
     useEffect(() => {
-        const fetchOrInitProfile = async () => {
+        const fetchProfile = async () => {
+            if (!user?.userId || !user?.username) return;
+
             try {
-                await client.graphql({
-                    query: createProfile,
-                    variables: {
-                        input: {
-                            id: user?.userId,
-                            username: user?.username,
-                            emoji: '😎',
-                            owner: user?.username,
-                        },
-                    },
+                setLoading(true);
+                const result = await client.graphql({
+                    query: getProfile,
+                    variables: { id: user.userId },
+                    authMode: 'userPool' as any,
                 });
-                setName(user?.username || '');
-                setSelectedEmoji('😎');
-            } catch (err: any) {
-                const msg = err?.errors?.[0]?.message || '';
-                if (msg.includes('already exists') || msg.includes('Conflict')) {
-                    console.log('Профиль уже существует');
+
+                const data = result?.data?.getProfile;
+                if (data) {
+                    setName(data.username || user.username);
+                    setSelectedEmoji(data.emoji || '😎');
                 } else {
-                    console.error('Fetch profile error:', JSON.stringify(err, null, 2));
+                    // Создаем профиль по умолчанию если не найден
+                    try {
+                        await client.graphql({
+                            query: createProfile,
+                            variables: {
+                                input: {
+                                    id: user.userId,
+                                    username: user.username,
+                                    emoji: '😎',
+                                    owner: user.username,
+                                },
+                            },
+                            authMode: 'userPool' as any,
+                        });
+                        console.log('Default profile created');
+                    } catch (createError) {
+                        console.error('Error creating default profile:', createError);
+                    }
                 }
+            } catch (err) {
+                console.error('Fetch profile error:', JSON.stringify(err, null, 2));
+            } finally {
+                setLoading(false);
             }
         };
 
-        if (user?.userId && user?.username) {
-            fetchOrInitProfile();
-        }
+        fetchProfile();
     }, [user?.userId, user?.username]);
+
+    const handleSignOut = () => {
+        signOut();
+        navigate('/');
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-pink-100 p-6">
@@ -137,7 +171,7 @@ const Profile: React.FC = () => {
                             </div>
                         </div>
                         <button
-                            onClick={signOut}
+                            onClick={handleSignOut}
                             className="text-sm px-3 py-1 border border-red-300 text-red-600 rounded-full hover:bg-red-50 transition"
                         >
                             로그아웃
@@ -175,20 +209,22 @@ const Profile: React.FC = () => {
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         className="w-full px-4 py-2 border rounded-lg bg-white shadow-sm text-sm"
+                                        disabled={loading}
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-gray-700 mb-2">아바타 선택</label>
                                     <div className="grid grid-cols-5 gap-2">
-                                        {['😎', '🦊', '🐼', '🦁', '🐶', '🐱', '🐰', '🦄', '🐯', '🐻'].map(emoji => (
+                                        {['😎', '🦊', '🐼', '🦁', '🐶', '🐱', '🐰', '🦄', '🐯', '🐻'].map((emoji) => (
                                             <button
                                                 key={emoji}
                                                 onClick={() => uploadEmoji(emoji)}
+                                                disabled={loading}
                                                 className={`text-2xl p-2 rounded-lg border transition ${
                                                     selectedEmoji === emoji
                                                         ? 'bg-gradient-to-r from-purple-200 to-pink-200 border-purple-400'
                                                         : 'bg-gray-100 hover:bg-purple-100 border-transparent'
-                                                }`}
+                                                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 {emoji}
                                             </button>
@@ -201,9 +237,12 @@ const Profile: React.FC = () => {
 
                     <button
                         onClick={saveProfile}
-                        className="w-full py-3 text-white font-semibold rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 shadow"
+                        disabled={loading}
+                        className={`w-full py-3 text-white font-semibold rounded-full bg-gradient-to-r from-purple-500 to-pink-500 shadow transition ${
+                            loading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                        }`}
                     >
-                        변경사항 저장
+                        {loading ? '저장 중...' : '변경사항 저장'}
                     </button>
                 </div>
             </div>

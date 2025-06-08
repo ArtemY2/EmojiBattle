@@ -1,10 +1,9 @@
-type Profile
-  @model
-  @auth(rules: [
-    { allow: owner, operations: [create, read, update] }
-  ]) {
+type Profile @model @auth(rules: [
+  { allow: owner },
+  { allow: private, operations: [read] }
+]) {
   id: ID!
-  username: String
-  emoji: String
+  username: String!
+  emoji: String!
   owner: String
 }
