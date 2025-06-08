@@ -7,19 +7,17 @@ import { fetchAuthSession } from 'aws-amplify/auth';
 import { createProfile, updateProfile } from '../graphql/mutations';
 import { getProfile } from '../graphql/queries';
 
-// Правильная типизация для GraphQL клиента
 const client = generateClient();
 
 const Profile: React.FC = () => {
     const navigate = useNavigate();
     const { user, signOut } = useAuthenticator((context) => [context.user]);
-
     const [selectedEmoji, setSelectedEmoji] = useState('😎');
     const [name, setName] = useState(user?.username || '');
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        fetchAuthSession().then((session) => {
+        fetchAuthSession().then(session => {
             const token = session.tokens?.idToken?.toString();
             console.log('Cognito JWT:', token);
         });
@@ -34,66 +32,54 @@ const Profile: React.FC = () => {
             await uploadData({
                 key: filename,
                 data: blob,
-                options: {
-                    contentType: 'text/plain',
-                },
+                options: { contentType: 'text/plain' }
             }).result;
 
             setSelectedEmoji(emoji);
-            console.log('Emoji uploaded successfully:', emoji);
-        } catch (error) {
-            console.error('S3 Upload Error:', error);
-            alert('❌ Ошибка при загрузке эмодзи в S3');
+        } catch (err) {
+            console.error('Upload error:', err);
+            alert('❌ Ошибка загрузки эмодзи в S3');
         } finally {
             setLoading(false);
         }
     };
 
     const saveProfile = async () => {
-        if (!user?.userId || !user?.username) {
-            alert('❌ Пользователь не авторизован');
-            return;
-        }
-
+        if (!user?.userId) return;
         const input = {
             id: user.userId,
             username: name,
-            emoji: selectedEmoji,
-            owner: user.username,
+            emoji: selectedEmoji
         };
 
-        console.log('=== SAVE PROFILE DEBUG ===', input);
         setLoading(true);
-
         try {
-            // Сначала пытаемся создать профиль с указанием authMode
-            await client.graphql({
-                query: createProfile,
-                variables: { input },
-                authMode: 'userPool' as any,
+            const getResult = await client.graphql({
+                query: getProfile,
+                variables: { id: user.userId },
+                authMode: 'userPool'
             });
-            alert('✅ Профиль создан!');
-        } catch (error: any) {
-            console.error('Create profile error:', error);
 
-            // Если профиль уже существует, обновляем его
-            if (error.errors?.[0]?.errorType === 'ConditionalCheckFailedException' ||
-                error.errors?.[0]?.errorType === 'ConflictUnhandled') {
-                try {
-                    await client.graphql({
-                        query: updateProfile,
-                        variables: { input },
-                        authMode: 'userPool' as any,
-                    });
-                    alert('✅ Профиль обновлён!');
-                } catch (updateError) {
-                    console.error('Update profile error:', updateError);
-                    alert('❌ Ошибка при обновлении профиля');
-                }
+            const existing = getResult?.data?.getProfile;
+
+            if (existing) {
+                await client.graphql({
+                    query: updateProfile,
+                    variables: { input },
+                    authMode: 'userPool'
+                });
+                alert('✅ Профиль обновлён!');
             } else {
-                console.error('GraphQL Save Error:', JSON.stringify(error, null, 2));
-                alert('❌ Ошибка при сохранении профиля');
+                await client.graphql({
+                    query: createProfile,
+                    variables: { input },
+                    authMode: 'userPool'
+                });
+                alert('✅ Профиль создан!');
             }
+        } catch (err) {
+            console.error('GraphQL Save Error:', JSON.stringify(err, null, 2));
+            alert('❌ Ошибка при сохранении профиля');
         } finally {
             setLoading(false);
         }
@@ -101,39 +87,18 @@ const Profile: React.FC = () => {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            if (!user?.userId || !user?.username) return;
-
+            if (!user?.userId) return;
             try {
                 setLoading(true);
                 const result = await client.graphql({
                     query: getProfile,
                     variables: { id: user.userId },
-                    authMode: 'userPool' as any,
+                    authMode: 'userPool'
                 });
-
                 const data = result?.data?.getProfile;
                 if (data) {
-                    setName(data.username || user.username);
-                    setSelectedEmoji(data.emoji || '😎');
-                } else {
-                    // Создаем профиль по умолчанию если не найден
-                    try {
-                        await client.graphql({
-                            query: createProfile,
-                            variables: {
-                                input: {
-                                    id: user.userId,
-                                    username: user.username,
-                                    emoji: '😎',
-                                    owner: user.username,
-                                },
-                            },
-                            authMode: 'userPool' as any,
-                        });
-                        console.log('Default profile created');
-                    } catch (createError) {
-                        console.error('Error creating default profile:', createError);
-                    }
+                    setName(data.username ?? '');
+                    setSelectedEmoji(data.emoji ?? '😎');
                 }
             } catch (err) {
                 console.error('Fetch profile error:', JSON.stringify(err, null, 2));
@@ -141,9 +106,8 @@ const Profile: React.FC = () => {
                 setLoading(false);
             }
         };
-
         fetchProfile();
-    }, [user?.userId, user?.username]);
+    }, [user?.userId]);
 
     const handleSignOut = () => {
         signOut();
@@ -165,7 +129,7 @@ const Profile: React.FC = () => {
                         <div className="flex items-center space-x-4">
                             <div className="text-4xl">{selectedEmoji}</div>
                             <div>
-                                <p className="text-xl font-semibold">{user?.username || '익명 유저'}</p>
+                                <p className="text-xl font-semibold">{name || user?.username || '익명 유저'}</p>
                                 <p className="text-sm text-gray-500">ID: {user?.userId?.slice(0, 8)}...</p>
                                 <p className="text-xs text-purple-500 mt-1">AWS Cognito 인증됨</p>
                             </div>
