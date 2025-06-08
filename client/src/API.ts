@@ -2,21 +2,19 @@
 /* eslint-disable */
 //  This file was automatically generated and should not be edited.
 
-export type CreateProfileInput = {
-  id?: string | null,
-  username?: string | null,
-  emoji?: string | null,
+export type DeleteProfileInput = {
+  id: string,
 };
 
 export type ModelProfileConditionInput = {
   username?: ModelStringInput | null,
   emoji?: ModelStringInput | null,
+  owner?: ModelStringInput | null,
   and?: Array< ModelProfileConditionInput | null > | null,
   or?: Array< ModelProfileConditionInput | null > | null,
   not?: ModelProfileConditionInput | null,
   createdAt?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
-  owner?: ModelStringInput | null,
 };
 
 export type ModelStringInput = {
@@ -64,8 +62,15 @@ export type Profile = {
   id: string,
   username?: string | null,
   emoji?: string | null,
+  owner?: string | null,
   createdAt: string,
   updatedAt: string,
+};
+
+export type CreateProfileInput = {
+  id?: string | null,
+  username?: string | null,
+  emoji?: string | null,
   owner?: string | null,
 };
 
@@ -73,22 +78,19 @@ export type UpdateProfileInput = {
   id: string,
   username?: string | null,
   emoji?: string | null,
-};
-
-export type DeleteProfileInput = {
-  id: string,
+  owner?: string | null,
 };
 
 export type ModelProfileFilterInput = {
   id?: ModelIDInput | null,
   username?: ModelStringInput | null,
   emoji?: ModelStringInput | null,
+  owner?: ModelStringInput | null,
   createdAt?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
   and?: Array< ModelProfileFilterInput | null > | null,
   or?: Array< ModelProfileFilterInput | null > | null,
   not?: ModelProfileFilterInput | null,
-  owner?: ModelStringInput | null,
 };
 
 export type ModelIDInput = {
@@ -154,6 +156,23 @@ export type ModelSubscriptionStringInput = {
   notIn?: Array< string | null > | null,
 };
 
+export type DeleteProfileMutationVariables = {
+  input: DeleteProfileInput,
+  condition?: ModelProfileConditionInput | null,
+};
+
+export type DeleteProfileMutation = {
+  deleteProfile?:  {
+    __typename: "Profile",
+    id: string,
+    username?: string | null,
+    emoji?: string | null,
+    owner?: string | null,
+    createdAt: string,
+    updatedAt: string,
+  } | null,
+};
+
 export type CreateProfileMutationVariables = {
   input: CreateProfileInput,
   condition?: ModelProfileConditionInput | null,
@@ -165,9 +184,9 @@ export type CreateProfileMutation = {
     id: string,
     username?: string | null,
     emoji?: string | null,
+    owner?: string | null,
     createdAt: string,
     updatedAt: string,
-    owner?: string | null,
   } | null,
 };
 
@@ -182,26 +201,9 @@ export type UpdateProfileMutation = {
     id: string,
     username?: string | null,
     emoji?: string | null,
+    owner?: string | null,
     createdAt: string,
     updatedAt: string,
-    owner?: string | null,
-  } | null,
-};
-
-export type DeleteProfileMutationVariables = {
-  input: DeleteProfileInput,
-  condition?: ModelProfileConditionInput | null,
-};
-
-export type DeleteProfileMutation = {
-  deleteProfile?:  {
-    __typename: "Profile",
-    id: string,
-    username?: string | null,
-    emoji?: string | null,
-    createdAt: string,
-    updatedAt: string,
-    owner?: string | null,
   } | null,
 };
 
@@ -215,9 +217,9 @@ export type GetProfileQuery = {
     id: string,
     username?: string | null,
     emoji?: string | null,
+    owner?: string | null,
     createdAt: string,
     updatedAt: string,
-    owner?: string | null,
   } | null,
 };
 
@@ -235,9 +237,9 @@ export type ListProfilesQuery = {
       id: string,
       username?: string | null,
       emoji?: string | null,
+      owner?: string | null,
       createdAt: string,
       updatedAt: string,
-      owner?: string | null,
     } | null >,
     nextToken?: string | null,
   } | null,
@@ -254,9 +256,9 @@ export type OnCreateProfileSubscription = {
     id: string,
     username?: string | null,
     emoji?: string | null,
+    owner?: string | null,
     createdAt: string,
     updatedAt: string,
-    owner?: string | null,
   } | null,
 };
 
@@ -271,9 +273,9 @@ export type OnUpdateProfileSubscription = {
     id: string,
     username?: string | null,
     emoji?: string | null,
+    owner?: string | null,
     createdAt: string,
     updatedAt: string,
-    owner?: string | null,
   } | null,
 };
 
@@ -288,8 +290,8 @@ export type OnDeleteProfileSubscription = {
     id: string,
     username?: string | null,
     emoji?: string | null,
+    owner?: string | null,
     createdAt: string,
     updatedAt: string,
-    owner?: string | null,
   } | null,
 };

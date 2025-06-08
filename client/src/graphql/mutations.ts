@@ -8,6 +8,24 @@ type GeneratedMutation<InputType, OutputType> = string & {
   __generatedMutationOutput: OutputType;
 };
 
+export const deleteProfile = /* GraphQL */ `mutation DeleteProfile(
+  $input: DeleteProfileInput!
+  $condition: ModelProfileConditionInput
+) {
+  deleteProfile(input: $input, condition: $condition) {
+    id
+    username
+    emoji
+    owner
+    createdAt
+    updatedAt
+    __typename
+  }
+}
+` as GeneratedMutation<
+  APITypes.DeleteProfileMutationVariables,
+  APITypes.DeleteProfileMutation
+>;
 export const createProfile = /* GraphQL */ `mutation CreateProfile(
   $input: CreateProfileInput!
   $condition: ModelProfileConditionInput
@@ -16,9 +34,9 @@ export const createProfile = /* GraphQL */ `mutation CreateProfile(
     id
     username
     emoji
+    owner
     createdAt
     updatedAt
-    owner
     __typename
   }
 }
@@ -34,31 +52,13 @@ export const updateProfile = /* GraphQL */ `mutation UpdateProfile(
     id
     username
     emoji
+    owner
     createdAt
     updatedAt
-    owner
     __typename
   }
 }
 ` as GeneratedMutation<
   APITypes.UpdateProfileMutationVariables,
   APITypes.UpdateProfileMutation
->;
-export const deleteProfile = /* GraphQL */ `mutation DeleteProfile(
-  $input: DeleteProfileInput!
-  $condition: ModelProfileConditionInput
-) {
-  deleteProfile(input: $input, condition: $condition) {
-    id
-    username
-    emoji
-    createdAt
-    updatedAt
-    owner
-    __typename
-  }
-}
-` as GeneratedMutation<
-  APITypes.DeleteProfileMutationVariables,
-  APITypes.DeleteProfileMutation
 >;

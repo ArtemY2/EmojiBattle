@@ -4,7 +4,7 @@ import { uploadData } from 'aws-amplify/storage';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { generateClient } from 'aws-amplify/api';
 import { createProfile, updateProfile } from '../graphql/mutations';
-import { getProfile } from '../graphql/queries';
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 const client = generateClient();
 
@@ -14,6 +14,13 @@ const Profile: React.FC = () => {
 
     const [selectedEmoji, setSelectedEmoji] = useState('😎');
     const [name, setName] = useState(user?.username || '');
+
+    useEffect(() => {
+        fetchAuthSession().then(session => {
+            const token = session.tokens?.idToken?.toString();
+            console.log('Cognito JWT:', token);
+        });
+    }, []);
 
     const uploadEmoji = async (emoji: string) => {
         try {
@@ -33,7 +40,6 @@ const Profile: React.FC = () => {
             console.error('S3 Upload Error:', error);
             alert('❌ Ошибка при загрузке эмодзи в S3');
         }
-        console.log('Uploading emoji:', emoji);
     };
 
     const saveProfile = async () => {
@@ -49,72 +55,64 @@ const Profile: React.FC = () => {
         console.log('emoji:', input.emoji);
 
         try {
-            const result = await client.graphql({
-                query: getProfile,
-                variables: { id: input.id },
-            });
-
-            // @ts-ignore
-            const existing = result?.data?.getProfile;
-
-            if (existing) {
-                await client.graphql({
-                    query: updateProfile,
-                    variables: { input },
-                });
-                alert('✅ Профиль обновлён!');
-            } else {
-                await client.graphql({
-                    query: createProfile,
-                    variables: {
-                        input: {
-                            ...input,
-                            owner: user?.username, // ключ для доступа по @auth
-                        },
+            await client.graphql({
+                query: createProfile,
+                variables: {
+                    input: {
+                        ...input,
+                        owner: user?.username,
                     },
-                });
-                alert('✅ Новый профиль создан!');
+                },
+            });
+            alert('✅ Профиль создан!');
+        } catch (error: any) {
+            const msg = error?.errors?.[0]?.message || '';
+            if (msg.includes('already exists') || msg.includes('Conflict')) {
+                try {
+                    await client.graphql({
+                        query: updateProfile,
+                        variables: { input },
+                    });
+                    alert('✅ Профиль обновлён!');
+                } catch (updateError) {
+                    console.error('Update failed:', updateError);
+                    alert('❌ Ошибка при обновлении');
+                }
+            } else {
+                console.error('GraphQL Save Error:', JSON.stringify(error, null, 2));
+                alert('❌ Ошибка при сохранении профиля');
             }
-        } catch (error) {
-            console.error('GraphQL Save Error:', JSON.stringify(error, null, 2));
-            alert('❌ Ошибка при сохранении профиля');
         }
     };
 
     useEffect(() => {
-        const fetchProfile = async () => {
+        const fetchOrInitProfile = async () => {
             try {
-                const result = await client.graphql({
-                    query: getProfile,
-                    variables: { id: user?.userId },
-                });
-
-                // @ts-ignore
-                const data = result?.data?.getProfile;
-                if (data) {
-                    setName(data.username || '');
-                    setSelectedEmoji(data.emoji || '😎');
-                } else {
-                    // автоматически создаём новый профиль
-                    await client.graphql({
-                        query: createProfile,
-                        variables: {
-                            input: {
-                                id: user?.userId,
-                                username: user?.username,
-                                emoji: '😎',
-                                owner: user?.username,
-                            },
+                await client.graphql({
+                    query: createProfile,
+                    variables: {
+                        input: {
+                            id: user?.userId,
+                            username: user?.username,
+                            emoji: '😎',
+                            owner: user?.username,
                         },
-                    });
+                    },
+                });
+                setName(user?.username || '');
+                setSelectedEmoji('😎');
+            } catch (err: any) {
+                const msg = err?.errors?.[0]?.message || '';
+                if (msg.includes('already exists') || msg.includes('Conflict')) {
+                    console.log('Профиль уже существует');
+                } else {
+                    console.error('Fetch profile error:', JSON.stringify(err, null, 2));
                 }
-            } catch (err) {
-                console.error('Fetch profile error:', JSON.stringify(err, null, 2));
             }
         };
 
         if (user?.userId && user?.username) {
-            fetchProfile();
+            fetchOrInitProfile();
         }
     }, [user?.userId, user?.username]);
 

@@ -13,9 +13,9 @@ export const getProfile = /* GraphQL */ `query GetProfile($id: ID!) {
     id
     username
     emoji
+    owner
     createdAt
     updatedAt
-    owner
     __typename
   }
 }
@@ -33,9 +33,9 @@ export const listProfiles = /* GraphQL */ `query ListProfiles(
       id
       username
       emoji
+      owner
       createdAt
       updatedAt
-      owner
       __typename
     }
     nextToken

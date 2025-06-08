@@ -11,6 +11,7 @@ projects:
         generatedFileName: client/src/API.ts
         docsFilePath: client/src/graphql
         maxDepth: 2
+        importBasePath: client/src
 extensions:
   amplify:
     version: 3

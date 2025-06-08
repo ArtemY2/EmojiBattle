@@ -16,9 +16,9 @@ export const onCreateProfile = /* GraphQL */ `subscription OnCreateProfile(
     id
     username
     emoji
+    owner
     createdAt
     updatedAt
-    owner
     __typename
   }
 }
@@ -34,9 +34,9 @@ export const onUpdateProfile = /* GraphQL */ `subscription OnUpdateProfile(
     id
     username
     emoji
+    owner
     createdAt
     updatedAt
-    owner
     __typename
   }
 }
@@ -52,9 +52,9 @@ export const onDeleteProfile = /* GraphQL */ `subscription OnDeleteProfile(
     id
     username
     emoji
+    owner
     createdAt
     updatedAt
-    owner
     __typename
   }
 }
